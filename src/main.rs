@@ -20,7 +20,7 @@ fn main() -> Result<(), String> {
     let video_subsystem = sdl_context.video()?;
 
     let window = video_subsystem
-        .window("SDL2", 640, 480)
+        .window("Lite", 640, 480)
         .position_centered()
         .build()
         .map_err(|e| e.to_string())?;
@@ -132,4 +132,10 @@ fn main() -> Result<(), String> {
 //     }
 
     Ok(())
+}
+
+
+static fn get_exe_filename(char *buf, int sz) {
+
+
 }
