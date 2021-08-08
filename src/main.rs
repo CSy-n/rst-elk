@@ -10,6 +10,8 @@ use sdl2::rect::Point;
 use sdl2::rect::Rect;
 use std::time::Duration;
 
+use sdl2::pixels::{Color, PixelFormatEnum};
+
 use lua53_sys::{lauxlib, lua};
 
 pub const HELLO: &'static [u8] = b"print(\"Hello\")\0";
@@ -21,13 +23,15 @@ fn main() -> Result<(), String> {
 
     let window = video_subsystem
         .window("Lite", 640, 480)
+        .resizable()
         .position_centered()
         .build()
         .map_err(|e| e.to_string())?;
 
     let mut canvas = window
         .into_canvas()
-        .accelerated()
+        .software()
+//       .accelerated() // -- enables render-acceleration
         .build()
         .map_err(|e| e.to_string())?;
     let texture_creator = canvas.texture_creator();
@@ -69,22 +73,89 @@ fn main() -> Result<(), String> {
 //     let mut source_rect_2 = Rect::new(0, 64, sprite_tile_size.0, sprite_tile_size.0);
 //     let mut dest_rect_2 = Rect::new(0, 64, sprite_tile_size.0 * 4, sprite_tile_size.0 * 4);
 //     dest_rect_2.center_on(Point::new(440, 360));
+    let creator = canvas.texture_creator();
+    let mut texture = creator
+        .create_texture_target(PixelFormatEnum::RGBA8888, 400, 300)
+        .map_err(|e| e.to_string())?;
 
-    let mut running = true;
-    while running {
+  let mut tick = 0;
+  let mut angle = 0.0;
+    'running: loop {
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit { .. }
                 | Event::KeyDown {
                     keycode: Some(Keycode::Escape),
                     ..
-                } => {
-                    running = false;
-                }
+                } => break 'running,
                 _ => {}
             }
         }
-}
+
+        {
+            // Update the window title.
+            let window = canvas.window_mut();
+
+            let position = window.position();
+            let size = window.size();
+            let title = format!(
+                "Window - pos({}x{}), size({}x{}): {}",
+                position.0, position.1, size.0, size.1, tick
+            );
+            window.set_title(&title).map_err(|e| e.to_string())?;
+
+            tick += 1;
+        }
+        angle = (angle + 0.5) % 360.;
+        canvas
+            .with_texture_canvas(&mut texture, |texture_canvas| {
+                texture_canvas.clear();
+                texture_canvas.set_draw_color(Color::RGBA(255, 0, 0, 255));
+                texture_canvas
+                    .fill_rect(Rect::new(0, 0, 400, 300))
+                    .expect("could not fill rect");
+            })
+            .map_err(|e| e.to_string())?;
+
+        canvas.set_draw_color(Color::RGBA(0, 0, 0, 255));
+        let dst = Some(Rect::new(0, 0, 400, 300));
+
+
+        canvas.clear();
+        canvas.copy_ex(
+            &texture,
+            None,
+            dst,
+            angle,
+            Some(Point::new(400, 300)),
+            false,
+            false,
+        )?;
+
+        canvas.set_draw_color(Color::RGB(255, 0, 255));
+        canvas.present();
+    }
+
+
+
+
+
+
+//     let mut running = true;
+//     while running {
+//         for event in event_pump.poll_iter() {
+//             match event {
+//                 Event::Quit { .. }
+//                 | Event::KeyDown {
+//                     keycode: Some(Keycode::Escape),
+//                     ..
+//                 } => {
+//                     running = false;
+//                 }
+//                 _ => {}
+//             }
+//         }
+//     }
 //         let ticks = timer.ticks() as i32;
 
 //         // set the current frame for time
@@ -135,7 +206,8 @@ fn main() -> Result<(), String> {
 }
 
 
-static fn get_exe_filename(char *buf, int sz) {
+// static fn get_exe_filename(char *buf, int sz) {
 
 
-}
+// }
+
